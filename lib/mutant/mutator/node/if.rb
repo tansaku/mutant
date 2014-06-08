@@ -19,10 +19,10 @@ module Mutant
         # @api private
         #
         def dispatch
+          emit_singletons
           mutate_condition
           mutate_if_branch
           mutate_else_branch
-          emit_nil
         end
 
         # Emit conditon mutations
@@ -32,10 +32,12 @@ module Mutant
         # @api private
         #
         def mutate_condition
-          emit_condition_mutations
-          emit_self(n_not(condition), if_branch, else_branch)
-          emit_self(N_TRUE,  if_branch, else_branch)
-          emit_self(N_FALSE, if_branch, else_branch)
+          emit_condition_mutations do |condition|
+            !condition.type.eql?(:self)
+          end
+          emit_type(n_not(condition), if_branch, else_branch) unless condition.type == :match_current_line
+          emit_type(N_TRUE,  if_branch, else_branch)
+          emit_type(N_FALSE, if_branch, else_branch)
         end
 
         # Emit if branch mutations
@@ -45,11 +47,10 @@ module Mutant
         # @api private
         #
         def mutate_if_branch
-          emit_self(condition, else_branch, nil) if else_branch
-          if if_branch
-            emit_if_branch_mutations
-            emit_self(condition, if_branch, nil)
-          end
+          emit_type(condition, else_branch, nil) if else_branch
+          return unless if_branch
+          emit_if_branch_mutations
+          emit_type(condition, if_branch, nil)
         end
 
         # Emit else branch mutations
@@ -59,10 +60,9 @@ module Mutant
         # @api private
         #
         def mutate_else_branch
-          if else_branch
-            emit_else_branch_mutations
-            emit_self(condition, nil, else_branch)
-          end
+          return unless else_branch
+          emit_else_branch_mutations
+          emit_type(condition, nil, else_branch)
         end
 
       end # If

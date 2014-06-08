@@ -5,12 +5,12 @@ require 'set'
 require 'adamantium'
 require 'ice_nine'
 require 'abstract_type'
-require 'securerandom'
 require 'equalizer'
 require 'digest/sha1'
 require 'inflecto'
 require 'parser'
 require 'parser/current'
+require 'parser_extensions'
 require 'unparser'
 require 'ice_nine'
 require 'diff/lcs'
@@ -19,47 +19,26 @@ require 'anima'
 require 'concord'
 require 'morpher'
 
-# Monkey patch to parser that needs to be pushed upstream
-module Parser
-  # AST namespace
-  module AST
-    # The AST nodes we use in mutant
-    class Node
-
-      # Return hash compatible with #eql?
-      #
-      # @return [Fixnum]
-      #
-      # @api private
-      def hash
-        @type.hash ^ @children.hash ^ self.class.hash
-      end
-
-      # Test if node is equal to anotheo
-      #
-      # @return [true]
-      #   if node represents the same code semantics locations are ignored
-      #
-      # @return [false]
-      #   otherwise
-      #
-      # @api private
-      #
-      def eql?(other)
-        other.kind_of?(self.class)
-        other.type.eql?(@type) && other.children.eql?(@children)
-      end
-
-    end # Node
-  end # AST
-end # Parser
-
 # Library namespace
 module Mutant
   # The frozen empty string used within mutant
   EMPTY_STRING = ''.freeze
   # The frozen empty array used within mutant
   EMPTY_ARRAY = [].freeze
+
+  # Lookup constant for location
+  #
+  # @param [String] location
+  #
+  # @return [Object]
+  #
+  # @api private
+  #
+  def self.constant_lookup(location)
+    location.sub(CBASE_PATTERN, EMPTY_STRING).split(SCOPE_OPERATOR).reduce(Object) do |parent, name|
+      parent.const_get(name, nil)
+    end
+  end
 
   # Perform self zombification
   #
@@ -72,14 +51,76 @@ module Mutant
     self
   end
 
+  IsolationError = Class.new(RuntimeError)
+
+  # Call block in isolation
+  #
+  # This isolation implements the fork strategy.
+  # Future strategies will probably use a process pool that can
+  # handle multiple mutation kills, in-isolation at once.
+  #
+  # @return [Object]
+  #
+  # @api private
+  #
+  def self.isolate(&block)
+    reader, writer = IO.pipe.each(&:binmode)
+
+    pid = fork do
+      reader.close
+      writer.write(Marshal.dump(block.call))
+    end
+
+    writer.close
+
+    begin
+      data = Marshal.load(reader.read)
+    rescue ArgumentError
+      raise IsolationError, 'Childprocess wrote un-unmarshallable data'
+    end
+
+    status = Process.waitpid2(pid).last
+
+    unless status.exitstatus.zero?
+      raise IsolationError, "Childprocess exited with nonzero exit status: #{status.exitstatus}"
+    end
+
+    data
+  end
+
+  # Define instance of subclassed superclass as constant
+  #
+  # @param [Class] superclass
+  # @param [Symbol] name
+  #
+  # @return [self]
+  #
+  # @api private
+  #
+  def self.singleton_subclass_instance(name, superclass, &block)
+    klass = Class.new(superclass) do
+      def inspect
+        self.class.name
+      end
+
+      define_singleton_method(:name) do
+        "#{superclass.name}::#{name}".freeze
+      end
+    end
+    klass.class_eval(&block)
+    superclass.const_set(name, klass.new)
+    self
+  end
+
 end # Mutant
 
 require 'mutant/version'
 require 'mutant/cache'
+require 'mutant/delegator'
 require 'mutant/node_helpers'
-require 'mutant/singleton_methods'
+require 'mutant/warning_filter'
+require 'mutant/warning_expectation'
 require 'mutant/constants'
-require 'mutant/random'
 require 'mutant/walker'
 require 'mutant/require_highjack'
 require 'mutant/mutator'
@@ -115,8 +156,12 @@ require 'mutant/mutator/node/kwbegin'
 require 'mutant/mutator/node/named_value/access'
 require 'mutant/mutator/node/named_value/constant_assignment'
 require 'mutant/mutator/node/named_value/variable_assignment'
-require 'mutant/mutator/node/loop_control'
+require 'mutant/mutator/node/next'
+require 'mutant/mutator/node/break'
 require 'mutant/mutator/node/noop'
+require 'mutant/mutator/node/or_asgn'
+require 'mutant/mutator/node/and_asgn'
+require 'mutant/mutator/node/defined'
 require 'mutant/mutator/node/op_asgn'
 require 'mutant/mutator/node/conditional_loop'
 require 'mutant/mutator/node/yield'
@@ -125,6 +170,8 @@ require 'mutant/mutator/node/zsuper'
 require 'mutant/mutator/node/restarg'
 require 'mutant/mutator/node/send'
 require 'mutant/mutator/node/send/binary'
+require 'mutant/mutator/node/send/attribute_assignment'
+require 'mutant/mutator/node/send/index'
 require 'mutant/mutator/node/when'
 require 'mutant/mutator/node/define'
 require 'mutant/mutator/node/mlhs'
@@ -137,6 +184,7 @@ require 'mutant/mutator/node/case'
 require 'mutant/mutator/node/splat'
 require 'mutant/mutator/node/resbody'
 require 'mutant/mutator/node/rescue'
+require 'mutant/mutator/node/match_current_line'
 require 'mutant/config'
 require 'mutant/loader'
 require 'mutant/context'
@@ -156,28 +204,34 @@ require 'mutant/matcher/namespace'
 require 'mutant/matcher/scope'
 require 'mutant/matcher/filter'
 require 'mutant/matcher/null'
+require 'mutant/expression'
+require 'mutant/expression/method'
+require 'mutant/expression/namespace'
 require 'mutant/killer'
-require 'mutant/killer/static'
-require 'mutant/killer/forking'
-require 'mutant/killer/forked'
+require 'mutant/test'
 require 'mutant/strategy'
 require 'mutant/runner'
 require 'mutant/runner/config'
 require 'mutant/runner/subject'
 require 'mutant/runner/mutation'
+require 'mutant/runner/killer'
 require 'mutant/cli'
-require 'mutant/cli/classifier'
-require 'mutant/cli/classifier/namespace'
-require 'mutant/cli/classifier/method'
 require 'mutant/color'
-require 'mutant/differ'
+require 'mutant/diff'
 require 'mutant/reporter'
 require 'mutant/reporter/null'
+require 'mutant/reporter/trace'
 require 'mutant/reporter/cli'
+require 'mutant/reporter/cli/registry'
 require 'mutant/reporter/cli/printer'
-require 'mutant/reporter/cli/printer/config'
-require 'mutant/reporter/cli/printer/subject'
-require 'mutant/reporter/cli/printer/killer'
-require 'mutant/reporter/cli/printer/mutation'
+require 'mutant/reporter/cli/report'
+require 'mutant/reporter/cli/report/config'
+require 'mutant/reporter/cli/report/subject'
+require 'mutant/reporter/cli/report/mutation'
+require 'mutant/reporter/cli/progress'
+require 'mutant/reporter/cli/progress/config'
+require 'mutant/reporter/cli/progress/subject'
+require 'mutant/reporter/cli/progress/mutation'
+require 'mutant/reporter/cli/progress/noop'
 require 'mutant/zombifier'
 require 'mutant/zombifier/file'

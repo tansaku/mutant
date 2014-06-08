@@ -2,11 +2,9 @@
 
 if ENV['COVERAGE'] == 'true'
   require 'simplecov'
-  require 'coveralls'
 
   SimpleCov.formatter = SimpleCov::Formatter::MultiFormatter[
     SimpleCov::Formatter::HTMLFormatter,
-    Coveralls::SimpleCov::Formatter
  ]
 
   SimpleCov.start do
@@ -16,6 +14,7 @@ if ENV['COVERAGE'] == 'true'
     add_filter 'spec'
     add_filter 'vendor'
     add_filter 'test_app'
+    add_filter 'lib/mutant/meta/*'
 
     minimum_coverage 89.77  # TODO: raise this to 100, then mutation test
   end
@@ -26,6 +25,7 @@ require 'adamantium'
 require 'devtools/spec_helper'
 require 'unparser/cli'
 require 'mutant'
+require 'mutant/meta'
 
 $LOAD_PATH << File.join(TestApp.root, 'lib')
 
@@ -41,7 +41,7 @@ module ParserHelper
   end
 
   def parse(string)
-    Parser::CurrentRuby.parse(string)
+    Unparser::Preprocessor.run(Parser::CurrentRuby.parse(string))
   end
 end
 

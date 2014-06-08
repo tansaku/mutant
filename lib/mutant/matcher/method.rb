@@ -24,17 +24,8 @@ module Mutant
       def each
         return to_enum unless block_given?
 
-        unless skip?
-          if subject
-            yield subject
-          else
-            message = sprintf(
-              'Cannot find definition of: %s in %s',
-              identification,
-              source_location.join(':')
-            )
-            $stderr.puts(message)
-          end
+        if !skip? && subject
+          yield subject
         end
 
         self
@@ -55,7 +46,7 @@ module Mutant
       def skip?
         location = source_location
         if location.nil? || BLACKLIST.match(location.first)
-          message = sprintf(
+          message = format(
             '%s does not have valid source location unable to emit matcher',
             method.inspect
           )

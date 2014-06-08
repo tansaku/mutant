@@ -20,10 +20,10 @@ module Mutant
         # @api private
         #
         def dispatch
+          emit_singletons
           emit_condition_mutations if condition
           emit_when_mutations
           emit_else_mutations
-          emit_nil
         end
 
         # Emit when mutations
@@ -50,10 +50,9 @@ module Mutant
         def emit_else_mutations
           else_branch = children.last
           else_index = children.length - 1
-          if else_branch
-            mutate_child(else_index)
-            emit_child_update(else_index, nil)
-          end
+          return unless else_branch
+          mutate_child(else_index)
+          emit_child_update(else_index, nil)
         end
 
       end # Case

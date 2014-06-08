@@ -10,7 +10,8 @@ ClassVariable:
   exclude: []
 ControlParameter:
   enabled: true
-  exclude: []
+  exclude:
+  - Mutant::Expression#match_length
 DataClump:
   enabled: true
   exclude: []
@@ -33,6 +34,8 @@ FeatureEnvy:
   # Nature of OptionParser :(
   - Mutant::CLI#add_environmental_options
   - Mutant::CLI#parse
+  # False positive, its a utility
+  - Mutant::Meta::Example::Verification#format_mutation
 IrresponsibleModule:
   enabled: true
   exclude: []
@@ -40,6 +43,7 @@ LongParameterList:
   enabled: true
   exclude:
   - Mutant::Matcher::Method::Instance#self.build?
+  - Mutant::Runner#self.run
   max_params: 2
 LongYieldList:
   enabled: true
@@ -51,9 +55,14 @@ NestedIterators:
   - Mutant#self.singleton_subclass_instance
   - Mutant::CLI#parse
   - Mutant::Mutator::Util::Array::Element#dispatch
-  - Mutant::Reporter::CLI::Printer::Config::Runner#generic_stats
+  - Mutant::Mutator::Node::Resbody#mutate_captures
+  - Mutant::Mutator::Node::Arguments#emit_argument_mutations
+  - Mutant::Reporter::CLI::Report::Config#generic_stats
   - Mutant::RequireHighjack#infect
   - Mutant::RequireHighjack#desinfect
+  - Mutant::Reporter::CLI::Registry#included
+  - Mutant::Strategy#tests
+  - Parser::Lexer#self.new
   max_allowed_nesting: 1
   ignore_iterators: []
 NilCheck:
@@ -62,7 +71,9 @@ RepeatedConditional:
   enabled: true
   exclude:
   - Mutant::Mutator
+  - Mutant::Rspec::Strategy
   - Mutant::Reporter::CLI
+  - Mutant::Meta::Example::DSL
   max_ifs: 1
 TooManyInstanceVariables:
   enabled: true
@@ -83,12 +94,18 @@ TooManyStatements:
   enabled: true
   exclude:
   - Mutant#self.singleton_subclass_instance
+  - Mutant#self.isolate
   - Mutant::Rspec::Killer#run
   - Mutant::Reporter::CLI#colorized_diff
-  - Mutant::Reporter::CLI::Printer::Config::Runner#run
-  - Mutant::Runner#dispatch
+  - Mutant::Reporter::CLI::Report::Config#run
+  - Mutant::Runner#visit_collection
+  - Mutant::Runner#initialize
+  - Mutant::Runner::Mutation#run
   - Mutant::Zombifier::File#self.find
   - Mutant::RequireHighjack#infect
+  - Mutant::Reporter::CLI::Registry#included
+  - Mutant::Rspec::Strategy#new_reporter
+  - Mutant::Rspec::Strategy#run
   # How mutant does CLI parsing is shit
   - Mutant::CLI#parse
   - Mutant::CLI#initialize
@@ -126,7 +143,7 @@ UncommunicativeVariableName:
   - !ruby/regexp /^.$/
   - !ruby/regexp /[0-9]$/
   - !ruby/regexp /[A-Z]/
-  accept: []
+  accept: ['force_utf32']
 UnusedParameters:
   enabled: true
   exclude: []
@@ -138,7 +155,9 @@ UtilityFunction:
   - Mutant::Mutation::Neutral#success?
   - Mutant::NodeHelpers#s
   - Mutant::Rspec::Strategy#configuration
+  - Mutant::Rspec::Strategy#example_groups
   - Mutant::Rspec::Strategy#options
   - Mutant::Rspec::Strategy#world
   - Mutant::Rspec::Strategy#rspec2
+  - Mutant::Meta::Example::Verification#format_mutation
   max_helper_calls: 0

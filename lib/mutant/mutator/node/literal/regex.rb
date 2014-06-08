@@ -31,12 +31,12 @@ module Mutant
           # @api private
           #
           def dispatch
-            emit_nil
+            emit_singletons unless parent_type == :match_current_line
             children.each_with_index do |child, index|
               mutate_child(index) unless child.type == :str
             end
-            emit_self(s(:str, EMPTY_STRING), options)
-            emit_self(s(:str, NULL_REGEXP_SOURCE), options)
+            emit_type(options)
+            emit_type(s(:str, NULL_REGEXP_SOURCE), options)
           end
 
         end # Regex

@@ -1,9 +1,71 @@
-# v0.5.11 2014-04-07
+# v0.5.19 2014-06-06
+
+Changes:
+
+* Do not emit more powerful rescue matchers #183
+* Do not emit more powerful loop control #201
+
+# v0.5.18 2014-06-04
+
+Changes:
+
+* Do not rename lhs of or assigns when lhs is a ivasgn. Closes #150
+
+# v0.5.17 2014-05-27
+
+Changes:
+
+* Report selected tests in progress runner
+* Fix scope of rspec selections to include meaningful parents.
+* Add short circuts on already dead mutations under multiple test selections.
+
+# v0.5.16 2014-05-27
+
+Changes:
+
+* Fix granularity of test selection under rspec
+* Add mutation from [item] to item
+* Add mutation from #reverse_each to #each
+* Add mutation from #reverse_map to #each, #map
+* Add mutation from #map to #each
+
+# v0.5.15 2014-05-24
+
+Changes:
+
+* Put isolation pipe into binmode
+
+Changes:
+
+* Add support for rspec-3.0.0.rc1
+* Remove some senseless rescue mutations
+
+# v0.5.13 2014-05-23
+
+Changes:
+
+* Imporve reporting of isolation problems
+* Centralize test selection
+* Report selected tests
+* Report rspec output on noop failures
+* Silence warnings on methods without source location
+
+# v0.5.12 2014-05-09
+
+Changes:
+
+* Remove pointless mutation nil => Object.new
+
+# v0.5.11 2014-04-22
 
 Changes:
 
 * Fix crash on while and until without body
 * Better require highjack based zombifier
+* Do not mutate nthref $1 to gvar $0
+* Use faster duplicate guarding hashing AST::Node intances
+* Fix lots of shadowed invalid ASTs
+* Fix undefine initialize warnings, Closes #175
 
 # v0.5.10 2014-04-06
 

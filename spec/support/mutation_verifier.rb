@@ -46,7 +46,7 @@ private
   # @api private
   #
   def mutation_report
-    message = ['Original:', original_node.inspect]
+    message = ['Original-AST:', original_node.inspect, 'Original-Source:', Unparser.unparse(original_node)]
     if missing.any?
       message << 'Missing mutations:'
       message << missing.map(&method(:format_mutation)).join("\n-----\n")
@@ -92,5 +92,5 @@ private
     Unparser::CLI::Source::Node.new(Unparser::Preprocessor.run(original_node))
   end
   memoize :unparser
-end # MutationVerifier
 
+end # MutationVerifier

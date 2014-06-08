@@ -9,7 +9,9 @@ module Mutant
 
           handle(:sym)
 
-          PREFIX = 's'
+          children :value
+
+          PREFIX = '__mutant__'.freeze
 
         private
 
@@ -20,8 +22,10 @@ module Mutant
           # @api private
           #
           def dispatch
-            emit_nil
-            emit_new { new_self((PREFIX + Random.hex_string).to_sym) }
+            emit_singletons
+            Mutator::Util::Symbol.each(value, self) do |value|
+              emit_type(value)
+            end
           end
 
         end # Symbol

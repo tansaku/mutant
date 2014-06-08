@@ -18,8 +18,7 @@ module Mutant
           # @api private
           #
           def dispatch
-            emit_nil
-            emit_new { new_self(Random.hex_string) }
+            emit_singletons
           end
 
         end # String

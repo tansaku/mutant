@@ -13,12 +13,12 @@ Gem::Specification.new do |gem|
   gem.license     = 'MIT'
 
   gem.require_paths    = %w[lib]
-  gem.files            = `git ls-files -- lib/mutant{-,/}rspec.rb lib/mutant/rspec`.split("\n")
+  gem.files            = `git ls-files -- lib/mutant/rspec.rb lib/mutant/rspec`.split("\n")
   gem.test_files       = `git ls-files -- spec/{unit/mutant/rspec,integration/rspec}`.split("\n")
   gem.extra_rdoc_files = %w[TODO LICENSE]
 
   gem.add_runtime_dependency('mutant', "~> #{gem.version}")
-  gem.add_runtime_dependency('rspec-core', '>= 2.14.1', '<= 3.0.0.beta2')
+  gem.add_runtime_dependency('rspec-core', '>= 2.14.1', '<= 3.0.0')
 
   gem.add_development_dependency('bundler', '~> 1.3', '>= 1.3.5')
 end

@@ -26,7 +26,7 @@ module Mutant
           # @api private
           #
           def dispatch
-            emit_nil
+            emit_singletons
             emit_inverse
             emit_lower_bound_mutations
             emit_upper_bound_mutations
@@ -50,7 +50,7 @@ module Mutant
           #
           def emit_upper_bound_mutations
             emit__end_mutations
-            emit_self(NAN, _end)
+            emit_type(NAN, _end)
           end
 
           # Emit start mutations
@@ -61,8 +61,8 @@ module Mutant
           #
           def emit_lower_bound_mutations
             emit_start_mutations
-            emit_self(start, INFINITY)
-            emit_self(start, NAN)
+            emit_type(start, INFINITY)
+            emit_type(start, NAN)
           end
 
         end # Range

@@ -31,11 +31,17 @@ module Mutant
         # @api private
         #
         def prepare
-          scope.send(:undef_method, name)
+          expected_warnings =
+            if name.equal?(:initialize)
+              ["#{__FILE__}:#{__LINE__ + 5}: warning: undefining `initialize' may cause serious problems\n"]
+            else
+              []
+            end
+          WarningExpectation.new(expected_warnings).execute do
+            scope.send(:undef_method, name)
+          end
           self
         end
-
-      private
 
         # Mutator for memoized instance methods
         class Memoized < self
@@ -60,7 +66,7 @@ module Mutant
           #
           def prepare
             scope.send(:memoized_methods).instance_variable_get(:@memory).delete(name)
-            scope.send(:undef_method, name)
+            super
             self
           end
 

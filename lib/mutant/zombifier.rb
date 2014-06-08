@@ -6,16 +6,16 @@ module Mutant
     include Adamantium::Flat, Concord.new(:namespace)
 
     # Excluded into zombification
-    includes = %w(
+    includes = %w[
       mutant
       morpher
       adamantium
       equalizer
       anima
       concord
-    )
+    ]
 
-    INCLUDES = %r(\A#{Regexp.union(includes)}(?:/.*)?\z).freeze
+    INCLUDES = %r{\A#{Regexp.union(includes)}(?:/.*)?\z}.freeze
 
     # Initialize object
     #
@@ -26,9 +26,9 @@ module Mutant
     # @api private
     #
     def initialize(namespace)
-      @namespace = namespace
       @zombified = Set.new
       @highjack = RequireHighjack.new(Kernel, method(:require))
+      super(namespace)
     end
 
     # Perform zombification of target library

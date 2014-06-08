@@ -19,11 +19,10 @@ module Mutant
         # @api private
         #
         def dispatch
-          if value
-            emit(value)
-            emit_value_mutations
-          end
-          emit_nil
+          emit_singletons
+          return unless value
+          emit(value)
+          emit_value_mutations
         end
 
       end # Return

@@ -4,14 +4,14 @@ mutant
 [![Build Status](https://secure.travis-ci.org/mbj/mutant.png?branch=master)](http://travis-ci.org/mbj/mutant)
 [![Dependency Status](https://gemnasium.com/mbj/mutant.png)](https://gemnasium.com/mbj/mutant)
 [![Code Climate](https://codeclimate.com/github/mbj/mutant.png)](https://codeclimate.com/github/mbj/mutant)
-[![Inline docs](http://inch-pages.github.io/github/mbj/mutant.png)](http://inch-pages.github.io/github/mbj/mutant)
+[![Inline docs](http://inch-ci.org/github/mbj/mutant.png)](http://inch-ci.org/github/mbj/mutant)
+[![Gem Version](https://img.shields.io/gem/v/mutant.svg)](https://rubygems.org/gems/mutant)
+[![Gittip](https://img.shields.io/gittip/mbj.svg)](https://gittip.com/mbj)
 
 Mutant is a mutation testing tool for ruby.
 
 The idea is that if code can be changed and your tests do not notice, either that code isn't being covered
 or it does not have a speced side effect.
-
-A more readable introduction can be found under: http://solnic.eu/2013/01/23/mutation-testing-with-mutant.html
 
 Mutant supports MRI and RBX 1.9 and 2.0, while support for jruby is planned.
 It should also work under any ruby engine that supports POSIX-fork(2) semantics.
@@ -19,6 +19,24 @@ Support for MRI 2.1 is unstable, because this MRI release segfaults on basic met
 
 Mutant uses a pure ruby [parser](https://github.com/whitequark/parser) and an [unparser](https://github.com/mbj/unparser)
 to do its magic.
+
+Mutant does not have really good "getting started" documentation currently so please refer to presentations and blog posts below.
+
+Presentations
+-------------
+
+There are some presentations about mutant in the wild:
+
+* [RailsConf 2014](http://railsconf.com/) / http://confreaks.com/videos/3333-railsconf-mutation-testing-with-mutant
+* [Wrocloverb 2014](http://wrocloverb.com/) / https://www.youtube.com/watch?v=rz-lFKEioLk
+* [eurucamp 2013](http://2013.eurucamp.org/) / FrOSCon-2013 http://slid.es/markusschirp/mutation-testing
+* [Cologne.rb](http://www.colognerb.de/topics/mutation-testing-mit-mutant) / https://github.com/DonSchado/colognerb-on-mutant/blob/master/mutation_testing_slides.pdf
+
+Blog-Posts
+----------
+
+* http://www.sitepoint.com/mutation-testing-mutant/
+* http://solnic.eu/2013/01/23/mutation-testing-with-mutant.html
 
 Integrations
 ------------
@@ -99,25 +117,17 @@ Examples
 ```
 cd virtus
 # Run mutant on virtus namespace
-mutant --include lib --require virtus --use rspec ::Virtus*
+mutant --include lib --require virtus --use rspec Virtus*
 # Run mutant on specific virtus class
-mutant --include lib --require virtus --use rspec ::Virtus::Attribute
+mutant --include lib --require virtus --use rspec Virtus::Attribute
 # Run mutant on specific virtus class method
-mutant --include lib --require virtus --use rspec ::Virtus::Attribute.build
+mutant --include lib --require virtus --use rspec Virtus::Attribute.build
 # Run mutant on specific virtus instance method
-mutant --include lib --require virtus --use rspec ::Virtus::Attribute#type
+mutant --include lib --require virtus --use rspec Virtus::Attribute#type
 ```
 
-Presentations:
---------------
-
-There are some presentations about mutant in the wild:
-
-* [Eurocamp-2013](http://2013.eurucamp.org/) / FrOSCon-2013 http://slid.es/markusschirp/mutation-testing
-* [Cologne.rb](http://www.colognerb.de/topics/mutation-testing-mit-mutant) https://github.com/DonSchado/colognerb-on-mutant/blob/master/mutation_testing_slides.pdf
-
-Subjects:
----------
+Subjects
+--------
 
 Mutant currently mutates code in instance and singleton methods. It is planned to support mutation
 of constant definitions and domain specific languages, DSL probably as plugins.
@@ -136,6 +146,17 @@ current prefix level, these example groups *must* kill the mutation.
 
 This test selection strategy is compatible with the old `--rspec-dm2` and `--rspec-unit` strategy.
 The old flags were removed.  It allows to define very fine grained specs, or coarse grained - as you like.
+
+Donations
+---------
+
+I ([mbj](https://github.com/mbj)) build this and adjacent tools in my free time.
+LOTS of unaccounted time and fun already went into this project.
+
+You might consider to donate if you like this tool.
+
+* [![Gittip](https://img.shields.io/gittip/mbj.svg)](https://gittip.com/mbj)
+* [![Flattr this](http://api.flattr.com/button/flattr-badge-large.png)](http://flattr.com/thing/1823010/mbjmutant-on-GitHub)
 
 Support
 -------

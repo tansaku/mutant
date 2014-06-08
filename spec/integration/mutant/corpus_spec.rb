@@ -1,16 +1,19 @@
 # encoding: UTF-8
 
+require 'parallel'
 require 'spec_helper'
 
 describe 'Mutant on ruby corpus' do
 
-  before do
-    pending 'Unparser is too slow on big files'
-  end
-
   ROOT = Pathname.new(__FILE__).parent.parent.parent.parent
 
-  TMP = ROOT.join('tmp')
+  TMP = ROOT.join('tmp').freeze
+
+  before do
+    pending 'Corpus test is deactivated on 1.9.3' if RUBY_VERSION.eql?('1.9.3')
+  end
+
+  MUTEX = Mutex.new
 
   class Project
     include Anima.new(:name, :repo_uri, :exclude)
@@ -23,20 +26,33 @@ describe 'Mutant on ruby corpus' do
     # @raise [Exception]
     #   otherwise
     #
+    # rubocop:disable MethodLength
     def verify
       checkout
-      Pathname.glob(repo_path.join('**/*.rb')).sort.each do |path|
-        puts "Generating mutations for: #{path.to_s}"
-        node = Parser::CurrentRuby.parse(path.read)
+      start = Time.now
+      paths = Pathname.glob(repo_path.join('**/*.rb')).sort_by(&:size).reverse
+      total = Parallel.map(paths, finish: method(:progress)) do |path|
         count = 0
-        Mutant::Mutator::Node.each(node) do |mutant|
-          count += 1
-          if (count % 100).zero?
-            puts count
+        node =
+          begin
+            Parser::CurrentRuby.parse(path.read)
+          rescue EncodingError, ArgumentError
+            nil # Make rubocop happy
+          end
+        unless node.nil?
+          Mutant::Mutator::Node.each(node) do
+            count += 1
           end
         end
-        puts "Mutations: #{count}"
-      end
+        count
+      end.inject(0, :+)
+      took = Time.now - start
+      puts format(
+        'Total Mutations/Time/Parse-Errors: %s/%0.2fs - %0.2f/s',
+        total,
+        took,
+        total / took
+      )
       self
     end
 
@@ -50,11 +66,11 @@ describe 'Mutant on ruby corpus' do
       TMP.mkdir unless TMP.directory?
       if repo_path.exist?
         Dir.chdir(repo_path) do
-          system(%w(git pull origin master))
-          system(%w(git clean -f -d -x))
+          system(%w[git pull origin master])
+          system(%w[git clean -f -d -x])
         end
       else
-        system(%W(git clone #{repo_uri} #{repo_path}))
+        system(%W[git clone #{repo_uri} #{repo_path}])
       end
       self
     end
@@ -71,6 +87,20 @@ describe 'Mutant on ruby corpus' do
       TMP.join(name)
     end
 
+    # Print progress
+    #
+    # @param [Pathname] path
+    # @param [Fixnum] _index
+    # @param [Fixnum] count
+    #
+    # @return [undefined]
+    #
+    def progress(path, _index, count)
+      MUTEX.synchronize do
+        puts format('Mutations - %4i - %s', count, path)
+      end
+    end
+
     # Helper method to execute system commands
     #
     # @param [Array<String>] arguments
@@ -78,12 +108,11 @@ describe 'Mutant on ruby corpus' do
     # @api private
     #
     def system(arguments)
-      unless Kernel.system(*arguments)
-        if block_given?
-          yield
-        else
-          raise 'System command failed!'
-        end
+      return if Kernel.system(*arguments)
+      if block_given?
+        yield
+      else
+        raise 'System command failed!'
       end
     end
 

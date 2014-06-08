@@ -48,9 +48,19 @@ module Mutant
     #
     # @api private
     #
-    def self.run(config, object)
+    def self.run(config, object, *arguments)
       handler = lookup(object.class)
-      handler.new(config, object)
+      handler.new(config, object, *arguments)
+    end
+
+    # Test if runner is running
+    #
+    # Yeah this is evil. Should be refactored away
+    #
+    # @return [Boolean]
+    #
+    def running?
+      @running
     end
 
     # Return config
@@ -73,7 +83,11 @@ module Mutant
       @config = config
       @stop   = false
       @start  = Time.now
+      @running = true
+      progress(self)
       run
+      @running = false
+      progress(self)
       @end = Time.now
     end
 
@@ -101,16 +115,6 @@ module Mutant
       (@end || Time.now) - @start
     end
 
-    # Return reporter
-    #
-    # @return [Reporter]
-    #
-    # @api private
-    #
-    def reporter
-      config.reporter
-    end
-
     # Test if runner is successful
     #
     # @return [true]
@@ -133,7 +137,7 @@ module Mutant
     #
     abstract_method :run
 
-    # Return reporter
+    # Run reporter on object
     #
     # @param [Object] object
     #
@@ -141,20 +145,32 @@ module Mutant
     #
     # @api private
     #
-    def report(object)
-      reporter.report(object)
+    def progress(object)
+      reporter.progress(object)
     end
 
-    # Perform dispatch
+    # Return reporter
+    #
+    # @return [Reporter]
+    #
+    # @api private
+    #
+    def reporter
+      config.reporter
+    end
+
+    # Perform dispatch on multiple inputs
+    #
+    # @param [Enumerable<Object>] input
     #
     # @return [Enumerable<Runner>]
     #
     # @api private
     #
-    def dispatch(input)
+    def visit_collection(input, *arguments)
       collection = []
       input.each do |object|
-        runner = visit(object)
+        runner = visit(object, *arguments)
         collection << runner
         @stop = runner.stop?
         break if @stop
@@ -170,8 +186,8 @@ module Mutant
     #
     # @api private
     #
-    def visit(object)
-      Runner.run(config, object)
+    def visit(object, *arguments)
+      Runner.run(config, object, *arguments)
     end
 
   end # Runner

@@ -7,7 +7,7 @@ inherit_from: ../.rubocop.yml
 
 
 AllCops:
-  Includes:
+  Include:
     - '../**/*.rake'
     - 'Gemfile'
     - 'Gemfile.triage'
@@ -29,6 +29,19 @@ CollectionMethods:
     inject:   'reduce'
     find:     'detect'
     find_all: 'select'
+
+# Use square brackets for literal Array objects
+PercentLiteralDelimiters:
+  PreferredDelimiters:
+    '%':  ()
+    '%i': '[]'
+    '%q': ()
+    '%Q': ()
+    '%r': '{}'
+    '%s': ()
+    '%w': '[]'
+    '%W': '[]'
+    '%x': ()
 
 MethodLength:
   CountComments: false
@@ -97,6 +110,10 @@ IndentationWidth:
 
 # I like to have an empty line before closing the currently opened body
 EmptyLinesAroundBody:
+  Enabled: false
+
+# I test this style for a while
+LambdaCall:
   Enabled: false
 
 # I like my style more

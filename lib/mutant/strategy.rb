@@ -54,39 +54,51 @@ module Mutant
       self
     end
 
-    # Kill mutation
+    # Return all available tests by strategy
+    #
+    # @return [Enumerable<Test>]
+    #
+    # @api private
+    #
+    abstract_method :all_tests
+
+    # Return tests for mutation
+    #
+    # TODO: This logic is now centralized but still fucked.
     #
     # @param [Mutation] mutation
     #
-    # @return [Killer]
+    # @return [Enumerable<Test>]
     #
     # @api private
     #
-    def kill(mutation)
-      killer.new(self, mutation)
-    end
+    def tests(subject)
+      subject.match_prefixes.map do |match_expression|
+        tests = all_tests.select do |test|
+          test.subject_identification.start_with?(match_expression)
+        end
+        return tests if tests.any?
+      end
 
-  private
-
-    # Return killer
-    #
-    # @return [Class:Killer]
-    #
-    # @api private
-    #
-    def killer
-      self.class::KILLER
+      EMPTY_ARRAY
     end
 
     # Null strategy that never kills a mutation
     class Null < self
 
-      register 'null'
+      register('null')
 
-      KILLER = Killer::Null
+      # Return all tests
+      #
+      # @return [Enumerable<Test>]
+      #
+      # @api private
+      #
+      def all_tests
+        EMPTY_ARRAY
+      end
 
     end # Null
 
   end # Strategy
-
 end # Mutant

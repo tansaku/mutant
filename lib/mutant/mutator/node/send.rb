@@ -12,49 +12,18 @@ module Mutant
         children :receiver, :selector
 
         SELECTOR_REPLACEMENTS = IceNine.deep_freeze(
-          send:  [:public_send],
-          gsub:  [:sub],
-          eql?:  [:equal?],
-          :== => [:eql?, :equal?]
+          reverse_map:  [:map, :each],
+          reverse_each: [:each],
+          map:          [:each],
+          send:         [:public_send],
+          gsub:         [:sub],
+          eql?:         [:equal?],
+          :== =>        [:eql?, :equal?]
         )
 
         INDEX_REFERENCE = :[]
         INDEX_ASSIGN    = :[]=
         ASSIGN_SUFFIX   = '='.freeze
-
-        # Base mutator for index operations
-        class Index < self
-
-          # Mutator for index references
-          class Reference < self
-
-            # Perform dispatch
-            #
-            # @return [undefined]
-            #
-            # @api private
-            #
-            def dispatch
-              emit(receiver)
-            end
-
-          end # Reference
-
-          # Mutator for index assignments
-          class Assign < self
-
-            # Perform dispatch
-            #
-            # @return [undefined]
-            #
-            # @api private
-            #
-            def dispatch
-              emit(receiver)
-            end
-
-          end # Assign
-        end # Index
 
       private
 
@@ -65,6 +34,7 @@ module Mutant
         # @api private
         #
         def dispatch
+          emit_singletons
           case selector
           when INDEX_REFERENCE
             run(Index::Reference)
@@ -73,7 +43,6 @@ module Mutant
           else
             non_index_dispatch
           end
-          emit_nil
         end
 
         # Perform non index dispatch
@@ -86,6 +55,8 @@ module Mutant
           case
           when binary_operator?
             run(Binary)
+          when attribute_assignment?
+            run(AttributeAssignment)
           else
             normal_dispatch
           end
@@ -173,9 +144,8 @@ module Mutant
         # @api private
         #
         def mutate_arguments
-          return if arguments.empty?
-          emit_self(receiver, selector)
-          remaining_children_with_index.each do |node, index|
+          emit_type(receiver, selector)
+          remaining_children_with_index.each do |_node, index|
             mutate_child(index)
             delete_child(index)
           end
@@ -213,9 +183,20 @@ module Mutant
         # @api private
         #
         def emit_implicit_self
-          if receiver.type == :self && !KEYWORDS.include?(selector) && !attribute_assignment?
-            emit_receiver(nil)
-          end
+          emit_receiver(nil) if allow_implicit_self?
+        end
+
+        # Test if implicit self is allowed
+        #
+        # @return [Boolean]
+        #
+        # @api private
+        #
+        def allow_implicit_self?
+          receiver.type == :self &&
+          !KEYWORDS.include?(selector) &&
+          !attribute_assignment? &&
+          !OP_ASSIGN.include?(parent_type)
         end
 
         # Test for assignment

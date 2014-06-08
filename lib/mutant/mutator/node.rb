@@ -23,8 +23,8 @@ module Mutant
           children.at(index)
         end
 
-        define_method("emit_#{name}_mutations") do
-          mutate_child(index)
+        define_method("emit_#{name}_mutations") do |&block|
+          mutate_child(index, &block)
         end
 
         define_method("emit_#{name}") do |node|
@@ -44,6 +44,10 @@ module Mutant
       def self.define_remaining_children(names)
         define_method(:remaining_children_with_index) do
           children.each_with_index.drop(names.length)
+        end
+
+        define_method(:remaining_children_indices) do
+          children.each_index.drop(names.length)
         end
 
         define_method(:remaining_children) do
@@ -92,7 +96,7 @@ module Mutant
       #
       def emit_children_mutations
         Mutator::Util::Array.each(children, self) do |children|
-          emit_self(*children)
+          emit_type(*children)
         end
       end
 
@@ -114,9 +118,11 @@ module Mutant
       #
       # @api private
       #
-      def mutate_child(index, mutator = Mutator)
+      def mutate_child(index, mutator = Mutator, &block)
+        block ||= ->(_node) { true }
         child = children.at(index)
         mutator.each(child, self) do |mutation|
+          next unless block.call(mutation)
           emit_child_update(index, mutation)
         end
       end
@@ -132,7 +138,7 @@ module Mutant
       def delete_child(index)
         dup_children = children.dup
         dup_children.delete_at(index)
-        emit_self(*dup_children)
+        emit_type(*dup_children)
       end
 
       # Emit updated child
@@ -147,7 +153,7 @@ module Mutant
       def emit_child_update(index, node)
         new_children = children.dup
         new_children[index] = node
-        emit_self(*new_children)
+        emit_type(*new_children)
       end
 
       # Emit a new AST node with same class as wrapped node
@@ -158,11 +164,32 @@ module Mutant
       #
       # @api private
       #
-      def emit_self(*children)
-        emit(new_self(*children))
+      def emit_type(*children)
+        emit(Parser::AST::Node.new(node.type, children))
       end
 
-      # Emit a new AST node with NilLiteral class
+      # Emit singleton literals
+      #
+      # @return [undefined]
+      #
+      # @api private
+      #
+      def emit_singletons
+        emit_nil
+        emit_self
+      end
+
+      # Emit a literal self
+      #
+      # @return [undefined]
+      #
+      # @api private
+      #
+      def emit_self
+        emit(N_SELF)
+      end
+
+      # Emit a literal nil
       #
       # @return [undefined]
       #
@@ -170,16 +197,6 @@ module Mutant
       #
       def emit_nil
         emit(N_NIL) unless asgn_left?
-      end
-
-      # Return new self typed child
-      #
-      # @return [Parser::AST::Node]
-      #
-      # @api private
-      #
-      def new_self(*children)
-        Parser::AST::Node.new(node.type, children)
       end
 
       # Emit values
@@ -192,7 +209,7 @@ module Mutant
       #
       def emit_values(values)
         values.each do |value|
-          emit_self(value)
+          emit_type(value)
         end
       end
 
@@ -217,7 +234,7 @@ module Mutant
       # @api private
       #
       def asgn_left?
-        OP_ASSIGN.include?(parent_type) && parent.left.equal?(node)
+        OP_ASSIGN.include?(parent_type) && parent.node.children.first.equal?(node)
       end
 
     end # Node

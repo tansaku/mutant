@@ -120,9 +120,7 @@ module Mutant
       # @api private
       #
       def subject_selector
-        if @subject_selectors.any?
-          Morpher::Evaluator::Predicate::Boolean::Or.new(@subject_selectors)
-        end
+        Morpher::Evaluator::Predicate::Boolean::Or.new(@subject_selectors) if @subject_selectors.any?
       end
 
       # Return predicate
@@ -153,6 +151,10 @@ module Mutant
       # Return subject rejector
       #
       # @return [#call]
+      #   if there is a subject rejector
+      #
+      # @return [nil]
+      #   otherwise
       #
       # @api private
       #
@@ -161,9 +163,7 @@ module Mutant
           Morpher.compile(s(:eql, s(:attribute, :identification), s(:static, subject.identification)))
         end
 
-        if rejectors.any?
-          Morpher::Evaluator::Predicate::Boolean::Or.new(rejectors)
-        end
+        Morpher::Evaluator::Predicate::Boolean::Or.new(rejectors) if rejectors.any?
       end
     end
 
@@ -249,8 +249,11 @@ module Mutant
     #
     def parse_matchers(patterns)
       patterns.each do |pattern|
-        matcher = Classifier.run(@cache, pattern)
-        @builder.add_matcher(matcher)
+        expression = Expression.parse(pattern)
+        unless expression
+          raise Error, "Invalid mutant expression: #{pattern.inspect}"
+        end
+        @builder.add_matcher(expression.matcher(@cache))
       end
     end
 
@@ -285,7 +288,7 @@ module Mutant
     # @api private
     #
     def use(name)
-      require "mutant-#{name}"
+      require "mutant/#{name}"
       @strategy = Strategy.lookup(name).new
     rescue LoadError
       $stderr.puts("Cannot load plugin: #{name.inspect}")
@@ -321,7 +324,7 @@ module Mutant
     #
     def add_filter_options(opts)
       opts.on('--ignore-subject PATTERN', 'Ignore subjects that match PATTERN') do |pattern|
-        @builder.add_subject_ignore(Classifier.run(@cache, pattern))
+        @builder.add_subject_ignore(Expression.parse(pattern).matcher(@cache))
       end
       opts.on('--code CODE', 'Scope execution to subjects with CODE') do |code|
         @builder.add_subject_selector(Morpher.compile(s(:eql, s(:attribute, :code), s(:static, code))))
@@ -339,7 +342,7 @@ module Mutant
     def add_debug_options(opts)
       opts.on('--fail-fast', 'Fail fast') do
         @fail_fast = true
-      end.on('--version', 'Print mutants version') do |name|
+      end.on('--version', 'Print mutants version') do
         puts("mutant-#{Mutant::VERSION}")
         Kernel.exit(0)
       end.on('-d', '--debug', 'Enable debugging output') do
