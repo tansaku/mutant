@@ -16,6 +16,7 @@ module Mutant
           is_a?:         [:instance_of?],
           reverse_each:  [:each],
           reverse_merge: [:merge],
+          include?:      [:cover?],
           map:           [:each],
           send:          [:public_send],
           gsub:          [:sub],

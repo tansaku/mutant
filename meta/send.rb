@@ -63,6 +63,13 @@ Mutant::Meta::Example.add do
 end
 
 Mutant::Meta::Example.add do
+  source 'include?'
+
+  singleton_mutations
+  mutation 'cover?'
+end
+
+Mutant::Meta::Example.add do
   source 'reverse_each'
 
   singleton_mutations

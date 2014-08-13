@@ -1,3 +1,7 @@
+# v0.6.1
+
+* Add mutation from `#include?` to `#cover?`
+
 # v0.6.0 2014-08-11
 
 * Parallel execution / reporting.
