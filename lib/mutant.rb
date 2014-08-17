@@ -18,6 +18,7 @@ require 'concord'
 require 'morpher'
 require 'parallel'
 require 'open3'
+require 'yaml'
 
 # Library namespace
 module Mutant
