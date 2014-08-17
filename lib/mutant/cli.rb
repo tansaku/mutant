@@ -126,8 +126,7 @@ module Mutant
     # @api private
     #
     def setup_integration(name)
-      require "mutant/integration/#{name}"
-      update(integration: Integration.lookup(name))
+      update(integration: Integration.setup(name))
     end
 
     # Add options
