@@ -1,14 +1,25 @@
-name: mutant
-namespace: Mutant
-zombify: true
-expect_coverage: 62.08
-ignore_subjects:
-# Mutation causes infinite runtime
-- Mutant::Runner.lookup
-# Suboptimal test selection strategy (will be fixed soon) causes timeouts on CI
-- Mutant::Zombifier*
-- Mutant::Reporter*
-- Mutant::CLI*
-- Mutant.singleton_subclass_instance
-# Executing this has undefined behavior with the zombifier
-- Mutant.zombify
+expected_coverage: 62.08
+debug: false
+fail_fast: false
+includes:
+  - lib
+integration: 'null'
+isolation: fork
+matcher_config:
+  match_expressions:
+    - Mutant
+  subject_ignores:
+    # Mutation causes infinite runtime
+    - Mutant::Runner.lookup
+    # Suboptimal test selection strategy (will be fixed soon) causes timeouts on CI
+    - Mutant::Zombifier*
+    - Mutant::Reporter*
+    - Mutant::CLI*
+    - Mutant.singleton_subclass_instance
+    # Executing this has undefined behavior with the zombifier
+    - Mutant.zombify
+  subject_selects: []
+requires: []
+reporter: cli
+processes: 8
+zombie: true

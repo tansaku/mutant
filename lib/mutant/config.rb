@@ -97,7 +97,46 @@ module Mutant
     # @api private
     #
     def self.load(input)
-      LOADER.call(input)
+      evaluation = LOADER.evaluation(input)
+      unless evaluation.success?
+        $stderr.puts(evaluation.description)
+        raise 'Config could not be loaded'
+      end
+      evaluation.output
+    end
+
+    # Load config from file
+    #
+    # @param [Pathname] path
+    #
+    # @return [Config]
+    #
+    # @api private
+    #
+    def self.load_file(path)
+      load(YAML.load_file(path))
+    end
+
+    DEFAULT_LOCATION_PATTERN = '{.mutant,config/mutant.yml}'.freeze
+
+    # Load default config
+    #
+    # @return [Config]
+    #
+    # @api private
+    #
+    def self.load_default
+      files = Pathname.glob(Pathname.pwd.join(DEFAULT_LOCATION_PATTERN))
+
+      if files.length > 1
+        raise "More than one config file found in default locations: #{files}"
+      end
+
+      if files.empty?
+        raise "No config file found in default locations: #{DEFAULT_LOCATION_PATTERN}"
+      end
+
+      load_file(files.first)
     end
 
   end # Config
